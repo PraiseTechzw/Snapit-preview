@@ -12,7 +12,7 @@ import androidx.core.content.ContextCompat
 import com.snaptool.domain.repository.SettingsRepository
 import com.snaptool.service.ScreenRecordService
 import com.snaptool.ui.navigation.SnapToolNavHost
-import com.snaptool.ui.theme.SnapToolTheme
+import com.snaptool.ui.theme.SnapitTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
@@ -72,12 +72,12 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            SnapToolTheme {
+            SnapitTheme {
                 Surface(
                         modifier = Modifier.fillMaxSize(),
                         color = MaterialTheme.colorScheme.background
                 ) {
-                    SnapToolNavHost(
+                    SnapitNavHost(
                             onLaunchProjection = { intent, audioEnabled ->
                                 currentAudioEnabled = audioEnabled
                                 projectionLauncher.launch(intent)

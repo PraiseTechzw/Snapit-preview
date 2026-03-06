@@ -163,7 +163,7 @@ fun HomeScreen(
             ) {
                 Column {
                     Text(
-                            text = "SnapTool",
+                            text = "Snapit",
                             style =
                                     MaterialTheme.typography.headlineLarge.copy(
                                             brush =
@@ -345,7 +345,7 @@ fun HomeScreen(
 
             // ── Footer label ──────────────────────────────────────────────
             Text(
-                    text = "SnapTool v1.0.0",
+                    text = "Snapit v1.0.0",
                     style = MaterialTheme.typography.labelSmall,
                     color = Color(0xFF55557A),
                     modifier = Modifier.padding(bottom = 24.dp)
