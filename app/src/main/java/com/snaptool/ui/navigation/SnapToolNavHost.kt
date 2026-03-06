@@ -26,7 +26,7 @@ sealed class Screen(val route: String) {
 @Composable
 fun SnapToolNavHost(
     /** Passed down from MainActivity — launches the system MediaProjection consent dialog. */
-    onLaunchProjection: (Intent) -> Unit
+    onLaunchProjection: (Intent, Boolean) -> Unit
 ) {
     val navController = rememberNavController()
 

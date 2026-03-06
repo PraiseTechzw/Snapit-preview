@@ -35,8 +35,10 @@ class MainActivity : ComponentActivity() {
          * Set by ScreenRecordScreen before launching the projection request.
          * Called back on the main thread after the system dialog resolves.
          */
-        var onProjectionResult: ((resultCode: Int, data: android.content.Intent) -> Unit)? = null
+        var onProjectionResult: ((resultCode: Int, data: android.content.Intent, audioEnabled: Boolean) -> Unit)? = null
     }
+
+    private var currentAudioEnabled: Boolean = true
 
     private val projectionLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -44,10 +46,10 @@ class MainActivity : ComponentActivity() {
         val data = result.data
         if (result.resultCode == RESULT_OK && data != null) {
             // Forward directly to the service — do NOT pass to ViewModel/Repository.
-            startScreenRecordService(result.resultCode, data)
+            startScreenRecordService(result.resultCode, data, currentAudioEnabled)
 
-            // Also notify the ViewModel via the Screen so it can update UI state.
-            onProjectionResult?.invoke(result.resultCode, data)
+            // Also notify the ViewModel via the Screen if needed
+            onProjectionResult?.invoke(result.resultCode, data, currentAudioEnabled)
         }
         onProjectionResult = null
     }
@@ -61,7 +63,8 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     SnapToolNavHost(
-                        onLaunchProjection = { intent ->
+                        onLaunchProjection = { intent, audioEnabled ->
+                            currentAudioEnabled = audioEnabled
                             projectionLauncher.launch(intent)
                         }
                     )
@@ -75,11 +78,12 @@ class MainActivity : ComponentActivity() {
      * ContextCompat.startForegroundService() is the correct API on O+ and handles
      * the 5-second window within which the service must call startForeground().
      */
-    private fun startScreenRecordService(resultCode: Int, data: android.content.Intent) {
+    private fun startScreenRecordService(resultCode: Int, data: android.content.Intent, audioEnabled: Boolean) {
         val serviceIntent = ScreenRecordService.buildStartIntent(
-            context    = this,
-            resultCode = resultCode,
-            data       = data
+            context      = this,
+            resultCode   = resultCode,
+            data         = data,
+            audioEnabled = audioEnabled
         )
         ContextCompat.startForegroundService(this, serviceIntent)
     }

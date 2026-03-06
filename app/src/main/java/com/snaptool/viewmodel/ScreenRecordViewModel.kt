@@ -22,11 +22,15 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class ScreenRecordViewModel @Inject constructor(
-    private val screenRecordRepository: ScreenRecordRepository
+    private val screenRecordRepository: ScreenRecordRepository,
+    private val settingsRepository: com.snaptool.domain.repository.SettingsRepository
 ) : ViewModel() {
 
     /** Observed by the UI to show recording indicator, stop button, etc. */
     val recorderState: StateFlow<RecorderState> = screenRecordRepository.recorderState
+
+    /** Observed by the UI to pass the correct audio setting to the service. */
+    val audioEnabled = settingsRepository.isAudioEnabled()
 
     /**
      * Called by the UI when the user taps "Stop Recording".

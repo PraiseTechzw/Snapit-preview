@@ -33,11 +33,12 @@ import com.snaptool.viewmodel.ScreenRecordViewModel
 @Composable
 fun ScreenRecordScreen(
     onBack: () -> Unit,
-    onLaunchProjection: (Intent) -> Unit,
+    onLaunchProjection: (Intent, Boolean) -> Unit,
     viewModel: ScreenRecordViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val recorderState by viewModel.recorderState.collectAsState()
+    val audioEnabled  by viewModel.audioEnabled.collectAsState(initial = true)
     val isRecording   = recorderState == RecorderState.RECORDING_SCREEN
     val projectionManager = context.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
 
@@ -222,7 +223,7 @@ fun ScreenRecordScreen(
                     }
                 } else {
                     Button(
-                        onClick = { onLaunchProjection(projectionManager.createScreenCaptureIntent()) },
+                        onClick = { onLaunchProjection(projectionManager.createScreenCaptureIntent(), audioEnabled) },
                         modifier = Modifier.fillMaxWidth().height(60.dp),
                         shape    = RoundedCornerShape(18.dp),
                         colors   = ButtonDefaults.buttonColors(containerColor = Color.Transparent),

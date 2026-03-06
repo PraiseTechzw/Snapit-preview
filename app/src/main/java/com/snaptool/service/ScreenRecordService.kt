@@ -71,10 +71,27 @@ class ScreenRecordService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.d(TAG, "onStartCommand: action=${intent?.action}")
+
+        // ── CRITICAL: Call startForeground IMMEDIATELY ───────────────────────
+        // On Android 8.0+, if the app was started via ContextCompat.startForegroundService(),
+        // it MUST call startForeground() within 5 seconds, otherwise the OS kills it
+        // with ForegroundServiceDidNotStartInTimeException.
+        val notification = buildNotification()
+        val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+        } else 0
+
+        ServiceCompat.startForeground(this, NOTIFICATION_ID, notification, type)
+
         when (intent?.action) {
             ACTION_START -> handleStart(intent)
             ACTION_STOP  -> stopRecordingAndSelf()
-            else         -> { Log.w(TAG, "Unknown action: ${intent?.action}"); stopSelf() }
+            else         -> {
+                Log.w(TAG, "Unknown or null action — stopping")
+                ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+                stopSelf()
+            }
         }
         return START_NOT_STICKY
     }
@@ -92,25 +109,12 @@ class ScreenRecordService : Service() {
         val audioEnabled = intent.getBooleanExtra(EXTRA_AUDIO, false)
 
         if (resultCode == -1 || data == null) {
-            Log.e(TAG, "Missing resultCode or data Intent — cannot start recording")
+            Log.e(TAG, "Missing resultCode or data Intent")
+            ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
             stopSelf()
             return
         }
 
-        // ── STEP 1: Promote to foreground IMMEDIATELY ────────────────────────
-        // This MUST happen before getMediaProjection(). ServiceCompat handles the
-        // API level differences for the foreground service type flag.
-        ServiceCompat.startForeground(
-            /* service    = */ this,
-            /* id         = */ NOTIFICATION_ID,
-            /* notification = */ buildNotification(),
-            /* foregroundServiceType = */
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
-            } else {
-                0
-            }
-        )
 
         // ── STEP 2: Obtain MediaProjection — now safe after startForeground ──
         val projectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
@@ -313,14 +317,12 @@ class ScreenRecordService : Service() {
         private const val EXTRA_AUDIO       = "EXTRA_AUDIO"
 
         /** Build the Intent that MainActivity passes to ContextCompat.startForegroundService(). */
-        fun buildStartIntent(context: Context, resultCode: Int, data: Intent): Intent =
+        fun buildStartIntent(context: Context, resultCode: Int, data: Intent, audioEnabled: Boolean): Intent =
             Intent(context, ScreenRecordService::class.java).apply {
                 action = ACTION_START
                 putExtra(EXTRA_RESULT_CODE, resultCode)
                 putExtra(EXTRA_DATA, data)
-                // audioEnabled will be read inside the service from settings if desired;
-                // for simplicity we default to false here and let the service read it.
-                putExtra(EXTRA_AUDIO, false)
+                putExtra(EXTRA_AUDIO, audioEnabled)
             }
 
         /** Build the stop Intent (used by notification action and ViewModel). */
