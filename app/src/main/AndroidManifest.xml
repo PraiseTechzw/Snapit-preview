@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.snaptool">
 
-    <!-- Permissions -->
+    <!-- Standard permissions -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
@@ -12,6 +12,12 @@
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!--
+        Both permissions are required for foreground services on Android 9+.
+        FOREGROUND_SERVICE_MEDIA_PROJECTION is required on Android 14+ (API 34+)
+        specifically for the mediaProjection foreground service type.
+    -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
 
@@ -26,7 +32,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SnapTool"
         tools:targetApi="31">
-        
+
         <activity
             android:name=".ui.MainActivity"
             android:exported="true"
@@ -38,6 +44,12 @@
             </intent-filter>
         </activity>
 
+        <!--
+            foregroundServiceType="mediaProjection" is MANDATORY on API 29+.
+            The OS enforces that startForeground() is called with this type
+            BEFORE getMediaProjection() is invoked, otherwise a SecurityException
+            is thrown. This declaration enables that call.
+        -->
         <service
             android:name=".service.ScreenRecordService"
             android:enabled="true"
