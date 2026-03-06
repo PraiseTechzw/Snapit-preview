@@ -10,8 +10,8 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-// ── Always-dark scheme – SnapTool is a camera/recording app, dark looks best ──
-private val SnapToolDarkColors =
+// ── Always-dark scheme – Snapit is a camera/recording app, dark looks best ──
+private val SnapitDarkColors =
         darkColorScheme(
                 primary = Indigo60,
                 onPrimary = Color.White,
@@ -45,12 +45,12 @@ private val SnapToolDarkColors =
         )
 
 @Composable
-fun SnapToolTheme(
+fun SnapitTheme(
         darkTheme: Boolean = true, // force dark – looks great for a media app
         dynamicColor: Boolean = false, // skip Material You – use our brand palette
         content: @Composable () -> Unit
 ) {
-    val colorScheme = SnapToolDarkColors
+    val colorScheme = SnapitDarkColors
 
     val view = LocalView.current
     if (!view.isInEditMode) {
