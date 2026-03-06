@@ -1,5 +1,6 @@
 package com.snaptool.service
 
+import android.app.Activity
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -99,7 +100,7 @@ class ScreenRecordService : Service() {
     // ── Start handler ─────────────────────────────────────────────────────────
 
     private fun handleStart(intent: Intent) {
-        val resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, -1)
+        val resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, Activity.RESULT_CANCELED)
         val data: Intent? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             intent.getParcelableExtra(EXTRA_DATA, Intent::class.java)
         } else {
@@ -108,8 +109,8 @@ class ScreenRecordService : Service() {
         }
         val audioEnabled = intent.getBooleanExtra(EXTRA_AUDIO, false)
 
-        if (resultCode == -1 || data == null) {
-            Log.e(TAG, "Missing resultCode or data Intent")
+        if (resultCode != Activity.RESULT_OK || data == null) {
+            Log.e(TAG, "Invalid projection result: resultCode=$resultCode, dataNull=${data == null}")
             ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
             stopSelf()
             return
