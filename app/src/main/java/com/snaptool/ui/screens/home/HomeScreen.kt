@@ -5,22 +5,40 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.snaptool.domain.model.RecorderState
+import com.snaptool.ui.theme.*
 import com.snaptool.viewmodel.HomeViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onNavigateToCamera: () -> Unit,
@@ -32,8 +50,10 @@ fun HomeScreen(
     val context = LocalContext.current
     val recorderState by viewModel.recorderState.collectAsState()
 
-    var cameraPermissionGranted by remember { 
-        mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
+    var cameraPermissionGranted by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+        )
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -45,97 +65,347 @@ fun HomeScreen(
     LaunchedEffect(Unit) {
         val permissions = mutableListOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permissions.add(Manifest.permission.POST_NOTIFICATIONS)
-            permissions.add(Manifest.permission.READ_MEDIA_IMAGES)
-            permissions.add(Manifest.permission.READ_MEDIA_VIDEO)
+            permissions += listOf(
+                Manifest.permission.POST_NOTIFICATIONS,
+                Manifest.permission.READ_MEDIA_IMAGES,
+                Manifest.permission.READ_MEDIA_VIDEO
+            )
         } else {
-            permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+            permissions += Manifest.permission.READ_EXTERNAL_STORAGE
         }
         permissionLauncher.launch(permissions.toTypedArray())
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("SnapTool") })
-        }
-    ) { padding ->
+    // Animated gradient background
+    val infiniteTransition = rememberInfiniteTransition(label = "bg")
+    val gradientOffset by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue  = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(8000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "gradOffset"
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.radialGradient(
+                    colors  = listOf(
+                        Color(0xFF1B1B45).copy(alpha = 0.8f + gradientOffset * 0.2f),
+                        Surface0
+                    ),
+                    center  = Offset(0.3f + gradientOffset * 0.4f, 0.2f),
+                    radius  = 1800f
+                )
+            )
+    ) {
+        // Decorative blurred orb
+        Box(
+            modifier = Modifier
+                .size(280.dp)
+                .offset(x = (-60).dp, y = (-40).dp)
+                .background(
+                    Brush.radialGradient(listOf(Indigo50.copy(alpha = 0.35f), Color.Transparent)),
+                    shape = RoundedCornerShape(50)
+                )
+                .blur(60.dp)
+        )
+        Box(
+            modifier = Modifier
+                .size(200.dp)
+                .align(Alignment.BottomEnd)
+                .offset(x = 40.dp, y = 40.dp)
+                .background(
+                    Brush.radialGradient(listOf(Violet60.copy(alpha = 0.25f), Color.Transparent)),
+                    shape = RoundedCornerShape(50)
+                )
+                .blur(50.dp)
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .statusBarsPadding()
+                .padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            StatusCard(recorderState)
+            Spacer(modifier = Modifier.height(32.dp))
 
-            HomeButton(
-                text = "Take Photo / Video",
-                icon = Icons.Default.CameraAlt,
-                onClick = onNavigateToCamera,
-                enabled = cameraPermissionGranted
+            // ── Header ────────────────────────────────────────────────────
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "SnapTool",
+                        style = MaterialTheme.typography.headlineLarge.copy(
+                            brush = Brush.linearGradient(listOf(Indigo80, Violet70)),
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    )
+                    Text(
+                        text = "Capture. Record. Create.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFF8888BB)
+                    )
+                }
+                IconButton(
+                    onClick  = onNavigateToSettings,
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(SurfaceGlass)
+                        .border(1.dp, OutlineGlass, RoundedCornerShape(12.dp))
+                ) {
+                    Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Indigo80)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // ── Status pill ───────────────────────────────────────────────
+            StatusPill(recorderState)
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // ── Primary action card ───────────────────────────────────────
+            PrimaryActionCard(
+                icon    = Icons.Default.CameraAlt,
+                title   = "Camera",
+                subtitle = "Photos & Videos",
+                gradient = Brush.linearGradient(listOf(Indigo50, Violet60)),
+                onClick  = onNavigateToCamera,
+                enabled  = cameraPermissionGranted
             )
 
-            HomeButton(
-                text = "Record Screen",
-                icon = Icons.Default.Screenshot,
-                onClick = onNavigateToScreenRecord
-            )
+            Spacer(modifier = Modifier.height(16.dp))
 
-            HomeButton(
-                text = "Open Gallery",
-                icon = Icons.Default.PhotoLibrary,
-                onClick = onNavigateToGallery
-            )
+            // ── Secondary card row ────────────────────────────────────────
+            Row(
+                modifier            = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                SecondaryActionCard(
+                    modifier  = Modifier.weight(1f),
+                    icon      = Icons.Default.Screenshot,
+                    title     = "Record\nScreen",
+                    accentColor = Cyan50,
+                    onClick   = onNavigateToScreenRecord
+                )
+                SecondaryActionCard(
+                    modifier  = Modifier.weight(1f),
+                    icon      = Icons.Default.PhotoLibrary,
+                    title     = "My\nGallery",
+                    accentColor = Violet60,
+                    onClick   = onNavigateToGallery
+                )
+            }
 
-            HomeButton(
-                text = "Settings",
-                icon = Icons.Default.Settings,
-                onClick = onNavigateToSettings
+            Spacer(modifier = Modifier.weight(1f))
+
+            // ── Footer label ──────────────────────────────────────────────
+            Text(
+                text  = "SnapTool v1.0.0",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color(0xFF55557A),
+                modifier = Modifier.padding(bottom = 24.dp)
             )
         }
     }
 }
 
+// ── Status Pill ───────────────────────────────────────────────────────────────
 @Composable
-fun StatusCard(recorderState: RecorderState) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
+private fun StatusPill(recorderState: RecorderState) {
+    val isRecording = recorderState == RecorderState.RECORDING_SCREEN ||
+                      recorderState == RecorderState.RECORDING_VIDEO
+
+    val pillColor = if (isRecording) RecordRed else SuccessGreen
+
+    val pulseAnim = rememberInfiniteTransition(label = "pulse")
+    val pulse by pulseAnim.animateFloat(
+        initialValue  = 0.85f,
+        targetValue   = 1f,
+        animationSpec = infiniteRepeatable(
+            animation  = tween(900, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseScale"
+    )
+
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(SurfaceGlass)
+            .border(1.dp, OutlineGlass, RoundedCornerShape(50))
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment     = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .scale(if (isRecording) pulse else 1f)
+                .background(pillColor, shape = androidx.compose.foundation.shape.CircleShape)
+        )
+        Text(
+            text  = if (isRecording) "● ${recorderState.name.replace('_', ' ')}" else "Ready",
+            style = MaterialTheme.typography.labelMedium,
+            color = if (isRecording) RecordRed else SuccessGreen
+        )
+    }
+}
+
+// ── Primary Action Card ───────────────────────────────────────────────────────
+@Composable
+private fun PrimaryActionCard(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    gradient: Brush,
+    onClick: () -> Unit,
+    enabled: Boolean = true
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.97f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        label = "cardScale"
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(140.dp)
+            .scale(scale)
+            .clip(RoundedCornerShape(24.dp))
+            .background(if (enabled) gradient else Brush.linearGradient(listOf(Surface2, Surface3)))
+            .clickable(
+                interactionSource = interactionSource,
+                indication        = rememberRipple(color = Color.White.copy(alpha = 0.3f)),
+                enabled           = enabled,
+                onClick           = onClick
+            )
+    ) {
+        // Subtle inner glow stripe
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(0.5f)
+                .height(1.dp)
+                .align(Alignment.TopCenter)
+                .background(Color.White.copy(alpha = 0.4f))
+        )
+
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier          = Modifier.fillMaxSize().padding(28.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.Info, contentDescription = null)
-            Spacer(modifier = Modifier.width(12.dp))
+            Box(
+                modifier        = Modifier
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(Color.White.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(34.dp))
+            }
+            Spacer(modifier = Modifier.width(20.dp))
             Column {
-                Text("System Status", style = MaterialTheme.typography.titleMedium)
-                Text("State: ${recorderState.name}", style = MaterialTheme.typography.bodySmall)
+                Text(
+                    text  = title,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = Color.White,
+                    fontWeight = FontWeight.ExtraBold
+                )
+                Text(
+                    text  = subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White.copy(alpha = 0.75f)
+                )
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(28.dp))
+        }
+
+        if (!enabled) {
+            Box(
+                modifier = Modifier.fillMaxSize()
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Color.Black.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Camera permission required", style = MaterialTheme.typography.labelMedium, color = Color.White.copy(0.8f))
             }
         }
     }
 }
 
+// ── Secondary Action Card ─────────────────────────────────────────────────────
 @Composable
-fun HomeButton(
-    text: String,
+private fun SecondaryActionCard(
+    modifier: Modifier = Modifier,
     icon: ImageVector,
-    onClick: () -> Unit,
-    enabled: Boolean = true
+    title: String,
+    accentColor: Color,
+    onClick: () -> Unit
 ) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(64.dp),
-        enabled = enabled,
-        shape = MaterialTheme.shapes.medium
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue   = if (isPressed) 0.96f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        label         = "secCardScale"
+    )
+
+    Box(
+        modifier = modifier
+            .height(140.dp)
+            .scale(scale)
+            .clip(RoundedCornerShape(24.dp))
+            .background(Surface2)
+            .border(1.dp, accentColor.copy(alpha = 0.3f), RoundedCornerShape(24.dp))
+            .clickable(
+                interactionSource = interactionSource,
+                indication        = rememberRipple(color = accentColor.copy(0.2f)),
+                onClick           = onClick
+            )
     ) {
-        Icon(icon, contentDescription = null)
-        Spacer(modifier = Modifier.width(12.dp))
-        Text(text)
+        // Top accent stripe
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(2.dp)
+                .background(
+                    Brush.linearGradient(listOf(accentColor.copy(alpha = 0f), accentColor, accentColor.copy(alpha = 0f)))
+                )
+        )
+
+        Column(
+            modifier          = Modifier.fillMaxSize().padding(20.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Box(
+                modifier        = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(accentColor.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = accentColor, modifier = Modifier.size(26.dp))
+            }
+            Text(
+                text  = title,
+                style = MaterialTheme.typography.titleSmall,
+                color = Color(0xFFE0E0F0),
+                fontWeight = FontWeight.SemiBold,
+                lineHeight = 20.sp
+            )
+        }
     }
 }
