@@ -11,13 +11,16 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.FrameLayout
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Screenshot
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.*
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.savedstate.*
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.snaptool.ui.theme.SnapToolTheme
 
@@ -50,8 +54,9 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
 
     override fun onCreate() {
         super.onCreate()
-        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
+        savedStateRegistryController.performAttach()
         savedStateRegistryController.performRestore(null)
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         showOverlay()
     }
@@ -77,34 +82,68 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
         val composeView = ComposeView(this).apply {
             setContent {
                 SnapToolTheme {
-                    Box(
+                    var isExpanded by remember { mutableStateOf(false) }
+                    
+                    Row(
                         modifier = Modifier
-                            .size(56.dp)
+                            .wrapContentSize()
                             .clip(CircleShape)
-                            .background(Color(0xFF6200EE))
-                            .clickable {
-                                // Action: For now, bring app to front or take screenshot
-                                val intent = packageManager.getLaunchIntentForPackage(packageName)
-                                intent?.let { startActivity(it) }
-                            },
-                        contentAlignment = Alignment.Center
+                            .background(Color(0xE61A1A32)) // Deep midnight glass
+                            .padding(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Screenshot,
-                            contentDescription = "Snap",
-                            tint = Color.White
-                        )
+                        if (isExpanded) {
+                            // Photo Action
+                            IconButton(onClick = {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("snaptool://camera")).apply {
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                startActivity(intent)
+                                isExpanded = false
+                            }) {
+                                Icon(Icons.Default.CameraAlt, "Photo", tint = Color.White)
+                            }
+                            
+                            // Record Action
+                            IconButton(onClick = {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("snaptool://screen_record")).apply {
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                startActivity(intent)
+                                isExpanded = false
+                            }) {
+                                Icon(Icons.Default.Videocam, "Record", tint = Color.White)
+                            }
+                        }
+
+                        // Main Bubble Icon (Toggles expansion)
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF6200EE))
+                                .clickable { isExpanded = !isExpanded },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = if (isExpanded) Icons.Default.Close else Icons.Default.Screenshot,
+                                contentDescription = "Snap",
+                                tint = Color.White
+                            )
+                        }
                     }
                 }
             }
         }
 
-        // Set up the ComposeView for the service
-        composeView.setViewTreeLifecycleOwner(this)
-        composeView.setViewTreeViewModelStoreOwner(this)
-        composeView.setViewTreeSavedStateRegistryOwner(this)
-
-        overlayView?.addView(composeView)
+        // Set up the owners on the root view so children (ComposeView) can find them
+        overlayView?.let { root ->
+            root.setViewTreeLifecycleOwner(this)
+            root.setViewTreeViewModelStoreOwner(this)
+            root.setViewTreeSavedStateRegistryOwner(this)
+            root.addView(composeView)
+        }
 
         // Dragging logic
         overlayView?.setOnTouchListener(object : View.OnTouchListener {
@@ -112,6 +151,7 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
             private var initialY = 0
             private var initialTouchX = 0f
             private var initialTouchY = 0f
+            private var isDragging = false
 
             override fun onTouch(v: View, event: MotionEvent): Boolean {
                 when (event.action) {
@@ -120,13 +160,22 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
                         initialY = params.y
                         initialTouchX = event.rawX
                         initialTouchY = event.rawY
-                        return true
+                        isDragging = false
+                        return false // Allow fallback to children
                     }
                     MotionEvent.ACTION_MOVE -> {
-                        params.x = initialX + (event.rawX - initialTouchX).toInt()
-                        params.y = initialY + (event.rawY - initialTouchY).toInt()
-                        windowManager.updateViewLayout(overlayView, params)
-                        return true
+                        val dx = (event.rawX - initialTouchX).toInt()
+                        val dy = (event.rawY - initialTouchY).toInt()
+                        if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+                            isDragging = true
+                            params.x = initialX + dx
+                            params.y = initialY + dy
+                            windowManager.updateViewLayout(overlayView, params)
+                            return true
+                        }
+                    }
+                    MotionEvent.ACTION_UP -> {
+                        return isDragging
                     }
                 }
                 return false
