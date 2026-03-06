@@ -34,7 +34,7 @@ class MediaRepositoryImpl @Inject constructor(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
             projection,
             "${MediaStore.MediaColumns.RELATIVE_PATH} LIKE ?",
-            arrayOf("%SnapTool%"),
+            arrayOf("%Snapit%"),
             "${MediaStore.MediaColumns.DATE_ADDED} DESC"
         )?.use { cursor ->
             val idColumn = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
@@ -60,7 +60,7 @@ class MediaRepositoryImpl @Inject constructor(
             MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
             projection,
             "${MediaStore.MediaColumns.RELATIVE_PATH} LIKE ?",
-            arrayOf("%SnapTool%"),
+            arrayOf("%Snapit%"),
             "${MediaStore.MediaColumns.DATE_ADDED} DESC"
         )?.use { cursor ->
             val idColumn = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
