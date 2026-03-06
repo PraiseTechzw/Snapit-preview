@@ -171,7 +171,7 @@ class ScreenRecordService : Service() {
         }
 
         virtualDisplay = projection.createVirtualDisplay(
-            "SnapToolScreen",
+            "SnapitScreen",
             width, height, density,
             DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
             recorder.surface,

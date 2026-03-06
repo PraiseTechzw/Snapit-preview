@@ -53,7 +53,7 @@ class CameraRepositoryImpl @Inject constructor(
             put(MediaStore.MediaColumns.DISPLAY_NAME, name)
             put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
             if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/SnapTool")
+                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Snapit")
             }
         }
 
@@ -84,7 +84,7 @@ class CameraRepositoryImpl @Inject constructor(
             put(MediaStore.MediaColumns.DISPLAY_NAME, name)
             put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
             if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-                put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/SnapTool")
+                put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/Snapit")
             }
         }
 

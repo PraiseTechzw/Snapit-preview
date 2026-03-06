@@ -36,7 +36,7 @@ import com.snaptool.ui.theme.SnapitTheme
 
 /**
  * OverlayService - Displays a floating "Snap Bubble" on top of other apps.
- * This differentiates SnapTool from standard capture tools.
+ * This differentiates Snapit from standard capture tools.
  */
 class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStateRegistryOwner {
 

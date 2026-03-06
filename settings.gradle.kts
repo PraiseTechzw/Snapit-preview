@@ -22,6 +22,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "SnapTool"
+rootProject.name = "Snapit"
 include(":app")
  

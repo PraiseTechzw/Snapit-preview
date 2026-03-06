@@ -350,7 +350,7 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
 
                 // ── Footer ───────────────────────────────────────────────
                 Text(
-                        text = "SnapTool v1.0.0",
+                        text = "Snapit v1.0.0",
                         modifier = Modifier.align(Alignment.CenterHorizontally),
                         style = MaterialTheme.typography.labelSmall,
                         color = Color(0xFF44446A)
