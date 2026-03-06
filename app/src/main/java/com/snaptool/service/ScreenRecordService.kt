@@ -21,7 +21,7 @@ import android.util.Log
 import android.view.WindowManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
-import androidx.core.content.pm.ServiceInfoCompat
+import android.content.pm.ServiceInfo
 import com.snaptool.domain.model.RecorderState
 import com.snaptool.domain.repository.ScreenRecordRepository
 import com.snaptool.ui.MainActivity
@@ -105,7 +105,11 @@ class ScreenRecordService : Service() {
             /* id         = */ NOTIFICATION_ID,
             /* notification = */ buildNotification(),
             /* foregroundServiceType = */
-            ServiceInfoCompat.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+            } else {
+                0
+            }
         )
 
         // ── STEP 2: Obtain MediaProjection — now safe after startForeground ──

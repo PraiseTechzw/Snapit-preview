@@ -2,9 +2,8 @@ package com.snaptool.ui.screens.screenrecord
 
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.media.projection.MediaProjectionManager
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -34,20 +33,13 @@ import com.snaptool.viewmodel.ScreenRecordViewModel
 @Composable
 fun ScreenRecordScreen(
     onBack: () -> Unit,
+    onLaunchProjection: (Intent) -> Unit,
     viewModel: ScreenRecordViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val recorderState by viewModel.recorderState.collectAsState()
     val isRecording   = recorderState == RecorderState.RECORDING_SCREEN
     val projectionManager = context.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-
-    val projectionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
-            viewModel.startRecording(result.resultCode, result.data!!)
-        }
-    }
 
     // Pulsing ring animation when recording
     val infiniteTransition = rememberInfiniteTransition(label = "recPulse")
@@ -230,7 +222,7 @@ fun ScreenRecordScreen(
                     }
                 } else {
                     Button(
-                        onClick = { projectionLauncher.launch(projectionManager.createScreenCaptureIntent()) },
+                        onClick = { onLaunchProjection(projectionManager.createScreenCaptureIntent()) },
                         modifier = Modifier.fillMaxWidth().height(60.dp),
                         shape    = RoundedCornerShape(18.dp),
                         colors   = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
