@@ -26,9 +26,19 @@ sealed class Screen(val route: String) {
 @Composable
 fun SnapToolNavHost(
     /** Passed down from MainActivity — launches the system MediaProjection consent dialog. */
-    onLaunchProjection: (Intent, Boolean) -> Unit
+    onLaunchProjection: (Intent, Boolean) -> Unit,
+    initialUri: android.net.Uri? = null
 ) {
     val navController = rememberNavController()
+
+    androidx.compose.runtime.LaunchedEffect(initialUri) {
+        initialUri?.let { uri ->
+            when (uri.host) {
+                "camera" -> navController.navigate(Screen.Camera.route)
+                "screen_record" -> navController.navigate(Screen.ScreenRecord.route)
+            }
+        }
+    }
 
     NavHost(navController = navController, startDestination = Screen.Home.route) {
 

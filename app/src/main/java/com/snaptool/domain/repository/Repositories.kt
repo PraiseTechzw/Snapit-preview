@@ -15,4 +15,6 @@ interface SettingsRepository {
     suspend fun setAudioEnabled(enabled: Boolean)
     fun getVideoQuality(): Flow<String>
     suspend fun setVideoQuality(quality: String)
+    fun isOverlayEnabled(): Flow<Boolean>
+    suspend fun setOverlayEnabled(enabled: Boolean)
 }

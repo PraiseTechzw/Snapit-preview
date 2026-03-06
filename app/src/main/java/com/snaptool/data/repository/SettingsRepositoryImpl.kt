@@ -23,6 +23,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val PHOTO_PREFIX = stringPreferencesKey("photo_prefix")
         val AUDIO_ENABLED = booleanPreferencesKey("audio_enabled")
         val VIDEO_QUALITY = stringPreferencesKey("video_quality")
+        val OVERLAY_ENABLED = booleanPreferencesKey("overlay_enabled")
     }
 
     override fun getPhotoPrefix(): Flow<String> = context.dataStore.data.map { 
@@ -47,5 +48,13 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setVideoQuality(quality: String) {
         context.dataStore.edit { it[PreferencesKeys.VIDEO_QUALITY] = quality }
+    }
+
+    override fun isOverlayEnabled(): Flow<Boolean> = context.dataStore.data.map {
+        it[PreferencesKeys.OVERLAY_ENABLED] ?: false
+    }
+
+    override suspend fun setOverlayEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[PreferencesKeys.OVERLAY_ENABLED] = enabled }
     }
 }
