@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import com.snaptool.domain.repository.SettingsRepository
 import com.snaptool.service.ScreenRecordService
-import com.snaptool.ui.navigation.SnapToolNavHost
+import com.snaptool.ui.navigation.SnapitNavHost
 import com.snaptool.ui.theme.SnapitTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
