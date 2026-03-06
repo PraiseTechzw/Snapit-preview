@@ -32,7 +32,7 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.*
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.snaptool.ui.theme.SnapToolTheme
+import com.snaptool.ui.theme.SnapitTheme
 
 /**
  * OverlayService - Displays a floating "Snap Bubble" on top of other apps.
@@ -81,7 +81,7 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
         
         val composeView = ComposeView(this).apply {
             setContent {
-                SnapToolTheme {
+                SnapitTheme {
                     var isExpanded by remember { mutableStateOf(false) }
                     
                     Row(

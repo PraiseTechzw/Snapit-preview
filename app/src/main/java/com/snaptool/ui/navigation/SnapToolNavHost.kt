@@ -24,7 +24,7 @@ sealed class Screen(val route: String) {
 }
 
 @Composable
-fun SnapToolNavHost(
+fun SnapitNavHost(
     /** Passed down from MainActivity — launches the system MediaProjection consent dialog. */
     onLaunchProjection: (Intent, Boolean) -> Unit,
     initialUri: android.net.Uri? = null
