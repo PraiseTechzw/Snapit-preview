@@ -1,6 +1,7 @@
 package com.snaptool.ui.screens.screenshot
 
 import android.content.Context
+import android.content.Intent
 import android.media.projection.MediaProjectionManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,14 +25,23 @@ import com.snaptool.ui.theme.*
 
 @Composable
 fun ScreenshotScreen(
-    onLaunchProjection: (android.content.Intent, Boolean) -> Unit,
+    // isScreenshot is always TRUE here — the navhost will call onLaunchProjection
+    // with (intent, audioEnabled=false, isScreenshot=true)
+    onLaunchProjection: (Intent, Boolean) -> Unit,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
-    val projectionManager = context.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+    val projectionManager =
+        context.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
 
+    // Fire the system permission dialog immediately on enter.
+    // Pass isScreenshot = true so MainActivity routes this to the screenshot path,
+    // NOT the screen-recording path.
     LaunchedEffect(Unit) {
-        onLaunchProjection(projectionManager.createScreenCaptureIntent(), false)
+        onLaunchProjection(
+            projectionManager.createScreenCaptureIntent(),
+            true   // ← isScreenshot = TRUE
+        )
     }
 
     Column(
@@ -66,7 +76,7 @@ fun ScreenshotScreen(
             )
         }
 
-        // ── Content ──────────────────────────────────────────────────────────
+        // ── Waiting for permission UI ─────────────────────────────────────────
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -76,7 +86,9 @@ fun ScreenshotScreen(
                     modifier = Modifier
                         .size(100.dp)
                         .clip(CircleShape)
-                        .background(Brush.radialGradient(listOf(Indigo50.copy(0.9f), Indigo30))),
+                        .background(
+                            Brush.radialGradient(listOf(Indigo50.copy(alpha = 0.9f), Indigo30))
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -87,7 +99,10 @@ fun ScreenshotScreen(
                     )
                 }
 
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
                     Text(
                         "Capturing screenshot…",
                         style = MaterialTheme.typography.titleMedium,
@@ -95,7 +110,7 @@ fun ScreenshotScreen(
                         fontWeight = FontWeight.SemiBold
                     )
                     Text(
-                        "Please grant screen capture permission",
+                        "Grant screen capture permission to continue",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color(0xFF7777AA)
                     )
@@ -107,7 +122,7 @@ fun ScreenshotScreen(
                     strokeWidth = 2.dp
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
                 OutlinedButton(
                     onClick = onBack,
