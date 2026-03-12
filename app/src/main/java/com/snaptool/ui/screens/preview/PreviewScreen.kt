@@ -6,7 +6,6 @@ import android.widget.VideoView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -17,7 +16,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -28,15 +26,14 @@ import com.snaptool.ui.theme.*
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PreviewScreen(
     uri: String,
     onBack: () -> Unit
 ) {
-    val context    = LocalContext.current
+    val context = LocalContext.current
     val decodedUri = Uri.parse(URLDecoder.decode(uri, StandardCharsets.UTF_8.toString()))
-    val isVideo    = decodedUri.toString().contains("video") || decodedUri.toString().endsWith(".mp4")
+    val isVideo = decodedUri.toString().contains("video") || decodedUri.toString().endsWith(".mp4")
 
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -45,10 +42,10 @@ fun PreviewScreen(
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        // ── Media content ──────────────────────────────────────────────────
+        // ── Media ─────────────────────────────────────────────────────────────
         if (isVideo) {
             AndroidView(
-                factory  = { ctx ->
+                factory = { ctx ->
                     VideoView(ctx).apply {
                         setVideoURI(decodedUri)
                         start()
@@ -58,120 +55,131 @@ fun PreviewScreen(
             )
         } else {
             AsyncImage(
-                model             = decodedUri,
+                model = decodedUri,
                 contentDescription = null,
-                modifier          = Modifier.fillMaxSize(),
-                contentScale      = ContentScale.Fit
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit
             )
         }
 
-        // ── Top gradient scrim ─────────────────────────────────────────────
+        // ── Top scrim ─────────────────────────────────────────────────────────
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(160.dp)
+                .height(120.dp)
                 .background(
-                    Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.75f), Color.Transparent))
+                    Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.7f), Color.Transparent))
                 )
         )
 
-        // ── Bottom gradient scrim + actions ───────────────────────────────
+        // ── Bottom scrim ──────────────────────────────────────────────────────
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(160.dp)
+                .height(120.dp)
                 .align(Alignment.BottomCenter)
                 .background(
-                    Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f)))
+                    Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f)))
                 )
         )
 
-        // ── Top bar ────────────────────────────────────────────────────────
+        // ── Top bar ───────────────────────────────────────────────────────────
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment     = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            GlassIconButton(onClick = onBack) {
-                Icon(Icons.Default.ArrowBack, "Back", tint = Color.White, modifier = Modifier.size(22.dp))
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color.Black.copy(alpha = 0.4f))
+                    .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
+            ) {
+                Icon(Icons.Default.ArrowBack, "Back", tint = Color.White, modifier = Modifier.size(20.dp))
             }
 
-            Row(
+            // Type badge
+            Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(50))
-                    .background(Color.White.copy(alpha = 0.08f))
+                    .background(Color.Black.copy(alpha = 0.5f))
                     .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(50))
-                    .padding(horizontal = 6.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    .padding(horizontal = 12.dp, vertical = 5.dp)
             ) {
                 Text(
-                    text  = if (isVideo) "VIDEO" else "PHOTO",
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    text = if (isVideo) "VIDEO" else "PHOTO",
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (isVideo) Cyan70 else Violet70,
+                    color = if (isVideo) Cyan60 else Indigo80,
                     fontWeight = FontWeight.Bold
                 )
             }
         }
 
-        // ── Bottom action bar ──────────────────────────────────────────────
+        // ── Bottom actions ────────────────────────────────────────────────────
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
-                .padding(horizontal = 32.dp, vertical = 24.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment     = Alignment.CenterVertically
+                .padding(horizontal = 40.dp, vertical = 20.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             // Share
-            ActionButton(
-                icon    = Icons.Default.Share,
-                label   = "Share",
-                tint    = Cyan60,
+            FilledTonalButton(
                 onClick = {
                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
                         type = if (isVideo) "video/mp4" else "image/jpeg"
                         putExtra(Intent.EXTRA_STREAM, decodedUri)
                     }
-                    context.startActivity(Intent.createChooser(shareIntent, "Share Media"))
-                }
-            )
+                    context.startActivity(Intent.createChooser(shareIntent, "Share"))
+                },
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = Color.White.copy(alpha = 0.12f),
+                    contentColor = Color.White
+                )
+            ) {
+                Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Share")
+            }
 
             // Delete
-            ActionButton(
-                icon    = Icons.Default.Delete,
-                label   = "Delete",
-                tint    = ErrorRed,
-                onClick = { showDeleteDialog = true }
-            )
+            FilledTonalButton(
+                onClick = { showDeleteDialog = true },
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = ErrorRed.copy(alpha = 0.15f),
+                    contentColor = ErrorRed
+                )
+            ) {
+                Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Delete")
+            }
         }
     }
 
-    // ── Delete confirmation dialog ─────────────────────────────────────────
+    // ── Delete dialog ─────────────────────────────────────────────────────────
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            containerColor   = Surface2,
-            titleContentColor = Color(0xFFE0E0F8),
-            textContentColor  = Color(0xFF9999CC),
-            title = {
-                Text("Delete Media?", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            },
-            text = {
-                Text("This action cannot be undone.", style = MaterialTheme.typography.bodyMedium)
-            },
+            containerColor = Surface2,
+            titleContentColor = Color.White,
+            textContentColor = Color(0xFF9999CC),
+            title = { Text("Delete this file?", fontWeight = FontWeight.Bold) },
+            text = { Text("This action cannot be undone.") },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        context.contentResolver.delete(decodedUri, null, null)
-                        showDeleteDialog = false
-                        onBack()
-                    }
-                ) {
+                TextButton(onClick = {
+                    context.contentResolver.delete(decodedUri, null, null)
+                    showDeleteDialog = false
+                    onBack()
+                }) {
                     Text("Delete", color = ErrorRed, fontWeight = FontWeight.Bold)
                 }
             },
@@ -181,39 +189,5 @@ fun PreviewScreen(
                 }
             }
         )
-    }
-}
-
-@Composable
-private fun GlassIconButton(onClick: () -> Unit, content: @Composable () -> Unit) {
-    IconButton(
-        onClick  = onClick,
-        modifier = Modifier
-            .size(44.dp)
-            .clip(CircleShape)
-            .background(Color.White.copy(alpha = 0.12f))
-            .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape)
-    ) {
-        content()
-    }
-}
-
-@Composable
-private fun ActionButton(icon: ImageVector, label: String, tint: Color, onClick: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        IconButton(
-            onClick  = onClick,
-            modifier = Modifier
-                .size(56.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(tint.copy(alpha = 0.15f))
-                .border(1.dp, tint.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
-        ) {
-            Icon(icon, null, tint = tint, modifier = Modifier.size(26.dp))
-        }
-        Text(label, style = MaterialTheme.typography.labelSmall, color = Color(0xFFAAAAAA))
     }
 }

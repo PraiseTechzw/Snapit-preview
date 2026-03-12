@@ -70,9 +70,8 @@ class MainActivity : ComponentActivity() {
         // Auto-start OverlayService if enabled
         val overlayEnabled = runBlocking { settingsRepository.isOverlayEnabled().first() }
         if (overlayEnabled && android.provider.Settings.canDrawOverlays(this)) {
-            ContextCompat.startForegroundService(
-                    this,
-                    android.content.Intent(this, com.snaptool.service.OverlayService::class.java)
+            startService(
+                android.content.Intent(this, com.snaptool.service.OverlayService::class.java)
             )
         }
 
