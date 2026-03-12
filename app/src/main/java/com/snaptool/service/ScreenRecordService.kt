@@ -28,6 +28,7 @@ import android.graphics.PixelFormat
 import android.media.ImageReader
 import com.snaptool.domain.model.RecorderState
 import com.snaptool.domain.repository.ScreenRecordRepository
+import com.snaptool.domain.repository.SettingsRepository
 import com.snaptool.ui.MainActivity
 import dagger.hilt.android.AndroidEntryPoint
 import java.text.SimpleDateFormat

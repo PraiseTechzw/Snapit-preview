@@ -17,7 +17,7 @@ fun ScreenshotScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
-    val projectionManager = context.getSystemService(Context.MEDIA_PROJECTION_MANAGER_SERVICE) as MediaProjectionManager
+    val projectionManager = context.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
 
     LaunchedEffect(Unit) {
         // Automatically request projection on entry if we came from a deep link
