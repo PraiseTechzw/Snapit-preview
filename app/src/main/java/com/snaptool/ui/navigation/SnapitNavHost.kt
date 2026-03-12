@@ -52,6 +52,9 @@ fun SnapitNavHost(
 
         composable(Screen.Screenshot.route) {
             com.snaptool.ui.screens.screenshot.ScreenshotScreen(
+                // ScreenshotScreen always calls this with isScreenshot=true.
+                // We forward: audioEnabled=false (screenshots have no audio),
+                // isScreenshot=true  → MainActivity routes to takeScreenshot(), not startRecording().
                 onLaunchProjection = { intent, isScreenshot ->
                     onLaunchProjection(intent, false, isScreenshot)
                 },
