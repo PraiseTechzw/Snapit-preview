@@ -94,15 +94,15 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         if (isExpanded) {
-                            // Photo Action
+                            // Screenshot Action
                             IconButton(onClick = {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("snaptool://camera")).apply {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("snaptool://screenshot")).apply {
                                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                 }
                                 startActivity(intent)
                                 isExpanded = false
                             }) {
-                                Icon(Icons.Default.CameraAlt, "Photo", tint = Color.White)
+                                Icon(Icons.Filled.Screenshot, "Screenshot", tint = Color.White)
                             }
                             
                             // Record Action
@@ -127,8 +127,8 @@ class OverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedStat
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = if (isExpanded) Icons.Default.Close else Icons.Default.Screenshot,
-                                contentDescription = "Snap",
+                                imageVector = if (isExpanded) Icons.Default.Close else Icons.Default.Adjust,
+                                contentDescription = "Snapit",
                                 tint = Color.White
                             )
                         }

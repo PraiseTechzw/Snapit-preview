@@ -20,18 +20,18 @@ class SettingsRepositoryImpl @Inject constructor(
 ) : SettingsRepository {
 
     private object PreferencesKeys {
-        val PHOTO_PREFIX = stringPreferencesKey("photo_prefix")
+        val SCREENSHOT_PREFIX = stringPreferencesKey("screenshot_prefix")
         val AUDIO_ENABLED = booleanPreferencesKey("audio_enabled")
-        val VIDEO_QUALITY = stringPreferencesKey("video_quality")
+        val RECORD_QUALITY = stringPreferencesKey("record_quality")
         val OVERLAY_ENABLED = booleanPreferencesKey("overlay_enabled")
     }
 
-    override fun getPhotoPrefix(): Flow<String> = context.dataStore.data.map { 
-        it[PreferencesKeys.PHOTO_PREFIX] ?: "IMG_"
+    override fun getScreenshotPrefix(): Flow<String> = context.dataStore.data.map { 
+        it[PreferencesKeys.SCREENSHOT_PREFIX] ?: "SHOT_"
     }
 
-    override suspend fun setPhotoPrefix(prefix: String) {
-        context.dataStore.edit { it[PreferencesKeys.PHOTO_PREFIX] = prefix }
+    override suspend fun setScreenshotPrefix(prefix: String) {
+        context.dataStore.edit { it[PreferencesKeys.SCREENSHOT_PREFIX] = prefix }
     }
 
     override fun isAudioEnabled(): Flow<Boolean> = context.dataStore.data.map {
@@ -42,12 +42,12 @@ class SettingsRepositoryImpl @Inject constructor(
         context.dataStore.edit { it[PreferencesKeys.AUDIO_ENABLED] = enabled }
     }
 
-    override fun getVideoQuality(): Flow<String> = context.dataStore.data.map {
-        it[PreferencesKeys.VIDEO_QUALITY] ?: "HD"
+    override fun getRecordQuality(): Flow<String> = context.dataStore.data.map {
+        it[PreferencesKeys.RECORD_QUALITY] ?: "HD"
     }
 
-    override suspend fun setVideoQuality(quality: String) {
-        context.dataStore.edit { it[PreferencesKeys.VIDEO_QUALITY] = quality }
+    override suspend fun setRecordQuality(quality: String) {
+        context.dataStore.edit { it[PreferencesKeys.RECORD_QUALITY] = quality }
     }
 
     override fun isOverlayEnabled(): Flow<Boolean> = context.dataStore.data.map {

@@ -36,11 +36,11 @@ import com.snaptool.viewmodel.SettingsViewModel
 @Composable
 fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewModel()) {
     val context = LocalContext.current
-    val photoPrefix by viewModel.photoPrefix.collectAsState()
+    val screenshotPrefix by viewModel.screenshotPrefix.collectAsState()
     val audioEnabled by viewModel.audioEnabled.collectAsState()
-    val videoQuality by viewModel.videoQuality.collectAsState()
+    val recordQuality by viewModel.recordQuality.collectAsState()
 
-    var tempPrefix by remember(photoPrefix) { mutableStateOf(photoPrefix) }
+    var tempPrefix by remember(screenshotPrefix) { mutableStateOf(screenshotPrefix) }
 
     Box(modifier = Modifier.fillMaxSize().background(Surface0)) {
         // Accent orb
@@ -98,7 +98,7 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                 SettingsCard {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                                text = "Photo File Prefix",
+                                text = "Screenshot File Prefix",
                                 style = MaterialTheme.typography.labelMedium,
                                 color = Color(0xFF8888BB)
                         )
@@ -106,7 +106,7 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                                 value = tempPrefix,
                                 onValueChange = {
                                     tempPrefix = it
-                                    viewModel.setPhotoPrefix(it)
+                                    viewModel.setScreenshotPrefix(it)
                                 },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
@@ -127,7 +127,7 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
 
                 // ── Section: Recording ───────────────────────────────────
                 Spacer(modifier = Modifier.height(4.dp))
-                SectionLabel(label = "Recording", icon = Icons.Default.Videocam)
+                SectionLabel(label = "Screen Recording", icon = Icons.Default.Videocam)
 
                 SettingsCard {
                     Row(
@@ -180,9 +180,9 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                     }
                 }
 
-                // ── Section: Video Quality ────────────────────────────────
+                // ── Section: Recording Quality ───────────────────────────
                 Spacer(modifier = Modifier.height(4.dp))
-                SectionLabel(label = "Video Quality", icon = Icons.Default.Hd)
+                SectionLabel(label = "Recording Quality", icon = Icons.Default.Hd)
 
                 SettingsCard {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -197,7 +197,7 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                         ) {
                             listOf("SD" to "480p", "HD" to "720p", "FHD" to "1080p").forEach {
                                     (quality, label) ->
-                                val selected = videoQuality == quality
+                                val selected = recordQuality == quality
                                 Box(
                                         modifier =
                                                 Modifier.weight(1f)
@@ -229,7 +229,7 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                                                             if (selected) mod
                                                             else
                                                                     mod.clickable {
-                                                                        viewModel.setVideoQuality(
+                                                                        viewModel.setRecordQuality(
                                                                                 quality
                                                                         )
                                                                     }

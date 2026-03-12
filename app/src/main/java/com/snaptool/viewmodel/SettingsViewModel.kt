@@ -13,19 +13,19 @@ import kotlinx.coroutines.launch
 class SettingsViewModel @Inject constructor(private val settingsRepository: SettingsRepository) :
         ViewModel() {
 
-    val photoPrefix =
+    val screenshotPrefix =
             settingsRepository
-                    .getPhotoPrefix()
-                    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "IMG_")
+                    .getScreenshotPrefix()
+                    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "SHOT_")
 
     val audioEnabled =
             settingsRepository
                     .isAudioEnabled()
                     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
-    val videoQuality =
+    val recordQuality =
             settingsRepository
-                    .getVideoQuality()
+                    .getRecordQuality()
                     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "HD")
 
     val overlayEnabled =
@@ -33,16 +33,16 @@ class SettingsViewModel @Inject constructor(private val settingsRepository: Sett
                     .isOverlayEnabled()
                     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
-    fun setPhotoPrefix(prefix: String) {
-        viewModelScope.launch { settingsRepository.setPhotoPrefix(prefix) }
+    fun setScreenshotPrefix(prefix: String) {
+        viewModelScope.launch { settingsRepository.setScreenshotPrefix(prefix) }
     }
 
     fun setAudioEnabled(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.setAudioEnabled(enabled) }
     }
 
-    fun setVideoQuality(quality: String) {
-        viewModelScope.launch { settingsRepository.setVideoQuality(quality) }
+    fun setRecordQuality(quality: String) {
+        viewModelScope.launch { settingsRepository.setRecordQuality(quality) }
     }
 
     fun setOverlayEnabled(enabled: Boolean) {

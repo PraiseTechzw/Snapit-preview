@@ -45,13 +45,18 @@ class MainActivity : ComponentActivity() {
     }
 
     private var currentAudioEnabled: Boolean = true
+    private var currentIsScreenshot: Boolean = false
 
     private val projectionLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 val data = result.data
                 if (result.resultCode == RESULT_OK && data != null) {
-                    // Forward directly to the service — do NOT pass to ViewModel/Repository.
-                    startScreenRecordService(result.resultCode, data, currentAudioEnabled)
+                    // Forward directly to the service
+                    if (currentIsScreenshot) {
+                        startScreenshotService(result.resultCode, data)
+                    } else {
+                        startScreenRecordService(result.resultCode, data, currentAudioEnabled)
+                    }
 
                     // Also notify the ViewModel via the Screen if needed
                     onProjectionResult?.invoke(result.resultCode, data, currentAudioEnabled)
@@ -78,8 +83,9 @@ class MainActivity : ComponentActivity() {
                         color = MaterialTheme.colorScheme.background
                 ) {
                     SnapitNavHost(
-                            onLaunchProjection = { intent, audioEnabled ->
+                            onLaunchProjection = { intent, audioEnabled, isScreenshot ->
                                 currentAudioEnabled = audioEnabled
+                                currentIsScreenshot = isScreenshot
                                 projectionLauncher.launch(intent)
                             },
                             initialUri = intent?.data
@@ -105,6 +111,19 @@ class MainActivity : ComponentActivity() {
                         resultCode = resultCode,
                         data = data,
                         audioEnabled = audioEnabled
+                )
+        ContextCompat.startForegroundService(this, serviceIntent)
+    }
+
+    private fun startScreenshotService(
+            resultCode: Int,
+            data: android.content.Intent
+    ) {
+        val serviceIntent =
+                ScreenRecordService.buildScreenshotIntent(
+                        context = this,
+                        resultCode = resultCode,
+                        data = data
                 )
         ContextCompat.startForegroundService(this, serviceIntent)
     }

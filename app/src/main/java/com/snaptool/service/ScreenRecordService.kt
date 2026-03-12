@@ -23,6 +23,9 @@ import android.view.WindowManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import android.content.pm.ServiceInfo
+import android.graphics.Bitmap
+import android.graphics.PixelFormat
+import android.media.ImageReader
 import com.snaptool.domain.model.RecorderState
 import com.snaptool.domain.repository.ScreenRecordRepository
 import com.snaptool.ui.MainActivity
@@ -30,6 +33,8 @@ import dagger.hilt.android.AndroidEntryPoint
 import java.text.SimpleDateFormat
 import java.util.Locale
 import javax.inject.Inject
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 
 /**
  * ScreenRecordService — the single owner of MediaProjection, MediaRecorder, and VirtualDisplay.
@@ -50,6 +55,7 @@ class ScreenRecordService : Service() {
 
     // ── Injected ──────────────────────────────────────────────────────────────
     @Inject lateinit var screenRecordRepository: ScreenRecordRepository
+    @Inject lateinit var settingsRepository: SettingsRepository
 
     // ── Recording resources (owned solely by this service) ─────────────────
     private var mediaProjection: MediaProjection? = null
@@ -87,6 +93,7 @@ class ScreenRecordService : Service() {
 
         when (intent?.action) {
             ACTION_START -> handleStart(intent)
+            ACTION_TAKE_SCREENSHOT -> handleStart(intent, isScreenshot = true)
             ACTION_STOP  -> stopRecordingAndSelf()
             else         -> {
                 Log.w(TAG, "Unknown or null action — stopping")
@@ -99,7 +106,7 @@ class ScreenRecordService : Service() {
 
     // ── Start handler ─────────────────────────────────────────────────────────
 
-    private fun handleStart(intent: Intent) {
+    private fun handleStart(intent: Intent, isScreenshot: Boolean = false) {
         val resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, Activity.RESULT_CANCELED)
         val data: Intent? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             intent.getParcelableExtra(EXTRA_DATA, Intent::class.java)
@@ -138,8 +145,84 @@ class ScreenRecordService : Service() {
         mediaProjection = projection
         projection.registerCallback(projectionCallback, null)
 
-        // ── STEP 3: Set up MediaRecorder and VirtualDisplay ──────────────────
-        startRecording(projection, audioEnabled)
+        // ── STEP 3: Set up Capture ───────────────────────────────────────────
+        if (isScreenshot) {
+            takeScreenshot(projection)
+        } else {
+            startRecording(projection, audioEnabled)
+        }
+    }
+
+    // ── Screenshot logic ──────────────────────────────────────────────────────
+
+    private fun takeScreenshot(projection: MediaProjection) {
+        val windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        val metrics = DisplayMetrics()
+        @Suppress("DEPRECATION")
+        windowManager.defaultDisplay.getRealMetrics(metrics)
+        val width = metrics.widthPixels
+        val height = metrics.heightPixels
+        val density = metrics.densityDpi
+
+        val imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
+        val virtualDisplay = projection.createVirtualDisplay(
+            "SnapitScreenshot",
+            width, height, density,
+            DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY or DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
+            imageReader.surface,
+            null, null
+        )
+
+        imageReader.setOnImageAvailableListener({ reader ->
+            val image = reader.acquireLatestImage() ?: return@setOnImageAvailableListener
+            val planes = image.planes
+            val buffer = planes[0].buffer
+            val pixelStride = planes[0].pixelStride
+            val rowStride = planes[0].rowStride
+            val rowPadding = rowStride - pixelStride * width
+
+            val bitmap = Bitmap.createBitmap(
+                width + rowPadding / pixelStride,
+                height,
+                Bitmap.Config.ARGB_8888
+            )
+            bitmap.copyPixelsFromBuffer(buffer)
+            image.close()
+            
+            // Success! Save it.
+            saveScreenshot(bitmap)
+            
+            // Cleanup
+            virtualDisplay.release()
+            imageReader.close()
+            stopRecordingAndSelf()
+        }, null)
+    }
+
+    private fun saveScreenshot(bitmap: Bitmap) {
+        try {
+            val prefix = runBlocking { settingsRepository.getScreenshotPrefix().first() }
+            val name = prefix + SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.US)
+                .format(System.currentTimeMillis())
+
+            val contentValues = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+                put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
+                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+                    put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Snapit")
+                }
+            }
+
+            val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+            uri?.let {
+                contentResolver.openOutputStream(it)?.use { stream ->
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+                }
+            }
+            Log.i(TAG, "Screenshot saved successfully")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to save screenshot: ${e.message}")
+        }
     }
 
     // ── Recording logic ───────────────────────────────────────────────────────
@@ -201,7 +284,8 @@ class ScreenRecordService : Service() {
                 MediaRecorder()
             }
 
-            val name = "SCR_" + SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.US)
+            val prefix = "SCR_"
+            val name = prefix + SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.US)
                 .format(System.currentTimeMillis())
 
             val contentValues = ContentValues().apply {
@@ -222,7 +306,14 @@ class ScreenRecordService : Service() {
                 setOutputFile(pfd?.fileDescriptor)
                 setVideoSize(width, height)
                 setVideoFrameRate(30)
-                setVideoEncodingBitRate(5 * 1024 * 1024)
+                val quality = runBlocking { settingsRepository.getRecordQuality().first() }
+                val bitrate = when (quality) {
+                    "SD" -> 1_500_000 // 1.5 Mbps
+                    "HD" -> 5_000_000 // 5 Mbps
+                    "FHD" -> 10_000_000 // 10 Mbps
+                    else -> 5_000_000
+                }
+                setVideoEncodingBitRate(bitrate)
                 setVideoEncoder(MediaRecorder.VideoEncoder.H264)
                 if (audioEnabled) setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
             }
@@ -280,7 +371,7 @@ class ScreenRecordService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Screen Recording")
             .setContentText("Recording in progress…")
-            .setSmallIcon(android.R.drawable.ic_menu_camera)
+            .setSmallIcon(android.R.drawable.ic_menu_save)
             .setContentIntent(mainPendingIntent)
             .addAction(android.R.drawable.ic_media_pause, "Stop", stopPendingIntent)
             .setOngoing(true)
@@ -307,10 +398,11 @@ class ScreenRecordService : Service() {
 
     companion object {
         private const val TAG           = "ScreenRecordService"
-        private const val CHANNEL_ID    = "screen_record_channel"
+        private const val CHANNEL_ID    = "screen_capture_channel"
         private const val NOTIFICATION_ID = 101
 
         const val ACTION_START = "com.snaptool.ACTION_START_RECORDING"
+        const val ACTION_TAKE_SCREENSHOT = "com.snaptool.ACTION_TAKE_SCREENSHOT"
         const val ACTION_STOP  = "com.snaptool.ACTION_STOP_RECORDING"
 
         private const val EXTRA_RESULT_CODE = "EXTRA_RESULT_CODE"
@@ -324,6 +416,14 @@ class ScreenRecordService : Service() {
                 putExtra(EXTRA_RESULT_CODE, resultCode)
                 putExtra(EXTRA_DATA, data)
                 putExtra(EXTRA_AUDIO, audioEnabled)
+            }
+
+        /** Build the Intent for taking a screenshot. */
+        fun buildScreenshotIntent(context: Context, resultCode: Int, data: Intent): Intent =
+            Intent(context, ScreenRecordService::class.java).apply {
+                action = ACTION_TAKE_SCREENSHOT
+                putExtra(EXTRA_RESULT_CODE, resultCode)
+                putExtra(EXTRA_DATA, data)
             }
 
         /** Build the stop Intent (used by notification action and ViewModel). */

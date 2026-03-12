@@ -1,10 +1,8 @@
 package com.snaptool.di
 
-import com.snaptool.data.repository.CameraRepositoryImpl
 import com.snaptool.data.repository.MediaRepositoryImpl
 import com.snaptool.data.repository.ScreenRecordRepositoryImpl
 import com.snaptool.data.repository.SettingsRepositoryImpl
-import com.snaptool.domain.repository.CameraRepository
 import com.snaptool.domain.repository.MediaRepository
 import com.snaptool.domain.repository.ScreenRecordRepository
 import com.snaptool.domain.repository.SettingsRepository
@@ -30,11 +28,6 @@ abstract class RepositoryModule {
         settingsRepositoryImpl: SettingsRepositoryImpl
     ): SettingsRepository
 
-    @Binds
-    @Singleton
-    abstract fun bindCameraRepository(
-        cameraRepositoryImpl: CameraRepositoryImpl
-    ): CameraRepository
 
     @Binds
     @Singleton

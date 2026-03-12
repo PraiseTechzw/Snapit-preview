@@ -41,7 +41,7 @@ import com.snaptool.viewmodel.HomeViewModel
 
 @Composable
 fun HomeScreen(
-        onNavigateToCamera: () -> Unit,
+        onNavigateToScreenshot: () -> Unit,
         onNavigateToScreenRecord: () -> Unit,
         onNavigateToGallery: () -> Unit,
         onNavigateToSettings: () -> Unit,
@@ -50,24 +50,13 @@ fun HomeScreen(
     val context = LocalContext.current
     val recorderState by viewModel.recorderState.collectAsState()
 
-    var cameraPermissionGranted by remember {
-        mutableStateOf(
-                ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
-                        PackageManager.PERMISSION_GRANTED
-        )
-    }
-
     val permissionLauncher =
             rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestMultiplePermissions()
-            ) { permissions ->
-                cameraPermissionGranted =
-                        permissions[Manifest.permission.CAMERA] ?: cameraPermissionGranted
-            }
+            ) { /* Handle others if needed */ }
 
     LaunchedEffect(Unit) {
-        val permissions =
-                mutableListOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO)
+        val permissions = mutableListOf(Manifest.permission.RECORD_AUDIO)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissions +=
                     listOf(
@@ -310,12 +299,12 @@ fun HomeScreen(
 
             // ── Primary action card ───────────────────────────────────────
             PrimaryActionCard(
-                    icon = Icons.Default.CameraAlt,
-                    title = "Smart Camera",
-                    subtitle = "Pro-grade Photo & Video",
+                    icon = Icons.Default.Screenshot,
+                    title = "Take Screenshot",
+                    subtitle = "Instant screen capture",
                     gradient = Brush.linearGradient(listOf(Indigo50, Violet60)),
-                    onClick = onNavigateToCamera,
-                    enabled = cameraPermissionGranted
+                    onClick = onNavigateToScreenshot,
+                    enabled = true
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -327,7 +316,7 @@ fun HomeScreen(
             ) {
                 SecondaryActionCard(
                         modifier = Modifier.weight(1f),
-                        icon = Icons.Default.Screenshot,
+                        icon = Icons.Default.Videocam,
                         title = "Record\nScreen",
                         accentColor = Cyan50,
                         onClick = onNavigateToScreenRecord
@@ -357,9 +346,7 @@ fun HomeScreen(
 // ── Status Pill ───────────────────────────────────────────────────────────────
 @Composable
 private fun StatusPill(recorderState: RecorderState, modifier: Modifier = Modifier) {
-    val isRecording =
-            recorderState == RecorderState.RECORDING_SCREEN ||
-                    recorderState == RecorderState.RECORDING_VIDEO
+    val isRecording = recorderState == RecorderState.RECORDING_SCREEN
 
     val pillColor = if (isRecording) RecordRed else SuccessGreen
 
@@ -498,7 +485,7 @@ private fun PrimaryActionCard(
                     contentAlignment = Alignment.Center
             ) {
                 Text(
-                        "Camera permission required",
+                        "Permission required",
                         style = MaterialTheme.typography.labelMedium,
                         color = Color.White.copy(0.8f)
                 )

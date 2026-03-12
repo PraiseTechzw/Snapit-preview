@@ -12,9 +12,9 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:src="@drawable/ic_camera_white_24dp"
+        android:src="@drawable/ic_screenshot"
         android:background="?android:attr/selectableItemBackgroundBorderless"
-        android:contentDescription="Quick Photo" />
+        android:contentDescription="Quick Screenshot" />
 
     <View
         android:layout_width="1dp"

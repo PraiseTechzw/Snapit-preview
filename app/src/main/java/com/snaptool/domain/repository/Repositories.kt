@@ -9,12 +9,12 @@ interface MediaRepository {
 }
 
 interface SettingsRepository {
-    fun getPhotoPrefix(): Flow<String>
-    suspend fun setPhotoPrefix(prefix: String)
+    fun getScreenshotPrefix(): Flow<String>
+    suspend fun setScreenshotPrefix(prefix: String)
     fun isAudioEnabled(): Flow<Boolean>
     suspend fun setAudioEnabled(enabled: Boolean)
-    fun getVideoQuality(): Flow<String>
-    suspend fun setVideoQuality(quality: String)
+    fun getRecordQuality(): Flow<String>
+    suspend fun setRecordQuality(quality: String)
     fun isOverlayEnabled(): Flow<Boolean>
     suspend fun setOverlayEnabled(enabled: Boolean)
 }

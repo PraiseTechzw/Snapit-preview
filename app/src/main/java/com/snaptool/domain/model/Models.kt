@@ -20,8 +20,7 @@ data class MediaItem(
 enum class RecorderState {
     IDLE,
     PREPARING,
-    RECORDING_PHOTO,
-    RECORDING_VIDEO,
+    TAKING_SCREENSHOT,
     RECORDING_SCREEN,
     STOPPING,
     SUCCESS,
@@ -29,5 +28,5 @@ enum class RecorderState {
 }
 
 enum class CaptureMode {
-    PHOTO, VIDEO
+    SCREENSHOT, SCREEN_RECORD
 }

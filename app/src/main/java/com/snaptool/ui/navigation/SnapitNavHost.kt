@@ -5,7 +5,6 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.snaptool.ui.screens.camera.CameraScreen
 import com.snaptool.ui.screens.gallery.GalleryScreen
 import com.snaptool.ui.screens.home.HomeScreen
 import com.snaptool.ui.screens.preview.PreviewScreen
@@ -14,7 +13,7 @@ import com.snaptool.ui.screens.settings.SettingsScreen
 
 sealed class Screen(val route: String) {
     object Home         : Screen("home")
-    object Camera       : Screen("camera")
+    object Screenshot   : Screen("screenshot")
     object ScreenRecord : Screen("screen_record")
     object Gallery      : Screen("gallery")
     object Settings     : Screen("settings")
@@ -26,7 +25,7 @@ sealed class Screen(val route: String) {
 @Composable
 fun SnapitNavHost(
     /** Passed down from MainActivity — launches the system MediaProjection consent dialog. */
-    onLaunchProjection: (Intent, Boolean) -> Unit,
+    onLaunchProjection: (Intent, Boolean, Boolean) -> Unit, // intent, audioEnabled, isScreenshot
     initialUri: android.net.Uri? = null
 ) {
     val navController = rememberNavController()
@@ -34,7 +33,7 @@ fun SnapitNavHost(
     androidx.compose.runtime.LaunchedEffect(initialUri) {
         initialUri?.let { uri ->
             when (uri.host) {
-                "camera" -> navController.navigate(Screen.Camera.route)
+                "screenshot" -> navController.navigate(Screen.Screenshot.route)
                 "screen_record" -> navController.navigate(Screen.ScreenRecord.route)
             }
         }
@@ -44,21 +43,28 @@ fun SnapitNavHost(
 
         composable(Screen.Home.route) {
             HomeScreen(
-                onNavigateToCamera       = { navController.navigate(Screen.Camera.route) },
+                onNavigateToScreenshot   = { navController.navigate(Screen.Screenshot.route) },
                 onNavigateToScreenRecord = { navController.navigate(Screen.ScreenRecord.route) },
                 onNavigateToGallery      = { navController.navigate(Screen.Gallery.route) },
                 onNavigateToSettings     = { navController.navigate(Screen.Settings.route) }
             )
         }
 
-        composable(Screen.Camera.route) {
-            CameraScreen(onBack = { navController.popBackStack() })
+        composable(Screen.Screenshot.route) {
+            com.snaptool.ui.screens.screenshot.ScreenshotScreen(
+                onLaunchProjection = { intent, isScreenshot ->
+                    onLaunchProjection(intent, false, isScreenshot)
+                },
+                onBack = { navController.popBackStack() }
+            )
         }
 
         composable(Screen.ScreenRecord.route) {
             ScreenRecordScreen(
                 onBack             = { navController.popBackStack() },
-                onLaunchProjection = onLaunchProjection
+                onLaunchProjection = { intent, audioEnabled ->
+                    onLaunchProjection(intent, audioEnabled, false)
+                }
             )
         }
 
